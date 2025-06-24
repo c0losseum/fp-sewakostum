@@ -1,0 +1,157 @@
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- =================================================================
+-- BAGIAN DDL (Data Definition Language) - MEMBUAT STRUKTUR TABEL
+-- Menghapus tabel jika sudah ada (dalam urutan terbalik dari pembuatan)
+-- =================================================================
+DROP TABLE IF EXISTS `reviews`;
+DROP TABLE IF EXISTS `costume_pricing`;
+DROP TABLE IF EXISTS `costume_sizes`;
+DROP TABLE IF EXISTS `costumes`;
+DROP TABLE IF EXISTS `categories`;
+DROP TABLE IF EXISTS `users`;
+
+
+-- =================================================================
+-- Tabel: users
+-- Menyimpan data pengguna yang mendaftar dan login.
+-- =================================================================
+CREATE TABLE `users` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `nama` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL UNIQUE,
+  `password` varchar(255) NOT NULL,
+  `no_telp` varchar(20) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- =================================================================
+-- Tabel: categories
+-- Menyimpan kategori kostum seperti Cosplay, Adat, dll.
+-- =================================================================
+CREATE TABLE `categories` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `name` varchar(100) NOT NULL,
+  `image_url` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- =================================================================
+-- Tabel: costumes
+-- Menyimpan data detail setiap kostum.
+-- =================================================================
+CREATE TABLE `costumes` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `category_id` int(11) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` text,
+  `price` decimal(10,2) NOT NULL,
+  `rental_duration_days` int(3) NOT NULL,
+  `rating` decimal(2,1) DEFAULT 5.0,
+  `image_url` varchar(255) NOT NULL,
+  `stock` int(5) NOT NULL DEFAULT 10,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- =================================================================
+-- Tabel: costume_sizes
+-- Menyimpan ukuran yang tersedia untuk setiap kostum.
+-- =================================================================
+CREATE TABLE `costume_sizes` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `costume_id` int(11) UNSIGNED NOT NULL,
+  `size` varchar(10) NOT NULL,
+  FOREIGN KEY (`costume_id`) REFERENCES `costumes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- =================================================================
+-- Tabel: costume_pricing
+-- Menyimpan opsi harga sewa berdasarkan durasi.
+-- =================================================================
+CREATE TABLE `costume_pricing` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `costume_id` int(11) UNSIGNED NOT NULL,
+  `duration_days` int(3) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  FOREIGN KEY (`costume_id`) REFERENCES `costumes` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+-- =================================================================
+-- Tabel: reviews
+-- Menyimpan ulasan dan rating dari pengguna untuk setiap kostum.
+-- =================================================================
+CREATE TABLE `reviews` (
+  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `costume_id` int(11) UNSIGNED NOT NULL,
+  `user_id` int(11) UNSIGNED NOT NULL,
+  `rating` tinyint(1) NOT NULL,
+  `comment` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`costume_id`) REFERENCES `costumes` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+SET FOREIGN_KEY_CHECKS=1;
+
+
+-- =================================================================
+-- BAGIAN DML (Data Manipulation Language) - MENGISI DATA CONTOH
+-- =================================================================
+
+-- 1. Mengisi tabel `users`
+-- Catatan: Hash password ini hanya contoh. Di aplikasi nyata, ini dibuat oleh password_hash() saat registrasi.
+INSERT INTO `users` (`id`, `nama`, `email`, `password`, `no_telp`) VALUES
+(1, 'Angela Calisto', 'angela@example.com', '$2y$10$3f2A5c6D7e8F9g0H1i2J3u4K5L6M7N8O9P0Q1R2S3T4U5V6W7X8Y.', '081234567890'),
+(2, 'Budi Sanjaya', 'budi@example.com', '$2y$10$3f2A5c6D7e8F9g0H1i2J3u4K5L6M7N8O9P0Q1R2S3T4U5V6W7X8Y.', '081234567891');
+
+
+-- 2. Mengisi tabel `categories`
+INSERT INTO `categories` (`id`, `name`, `image_url`) VALUES
+(1, 'Cosplay', 'kategori-cosplay.jpg'),
+(2, 'Adat', 'kategori-adat.jpg'),
+(3, 'Profesi', 'kategori-profesi.jpg'),
+(4, 'Badut', 'kategori-badut.jpg');
+
+
+-- 3. Mengisi tabel `costumes`
+INSERT INTO `costumes` (`id`, `category_id`, `name`, `description`, `price`, `rental_duration_days`, `rating`, `image_url`, `stock`) VALUES
+(1, 1, 'Firefly - Honkai Star Rail', 'Kostum karakter Firefly dari game Honkai Star Rail dengan kualitas premium dan detail yang akurat.', 50000.00, 3, 4.8, 'firefly.jpg', 8),
+(2, 1, 'Nezuko Kamado - Demon Slayer', 'Kostum lengkap Nezuko Kamado, termasuk kimono, obi, dan bambu ikoniknya.', 65000.00, 3, 5.0, 'nezuko.jpg', 5),
+(3, 2, 'Baju Adat Jawa - Pria', 'Satu set baju adat Jawa untuk pria, terdiri dari beskap, jarik, dan blangkon. Cocok untuk acara formal.', 75000.00, 2, 4.9, 'adat-jawa.jpg', 12),
+(4, 3, 'Dokter Profesional', 'Setelan jas dokter berwarna putih bersih, lengkap dengan stetoskop mainan.', 40000.00, 2, 4.7, 'profesi-dokter.jpg', 15),
+(5, 4, 'Badut Sirkus Ceria', 'Kostum badut penuh warna dengan wig keriting dan hidung merah, dijamin meriah.', 35000.00, 1, 4.5, 'badut.jpg', 20),
+(6, 1, 'Naruto Shippuden', 'Kostum Naruto Uzumaki versi Shippuden, lengkap dengan ikat kepala Konoha.', 55000.00, 3, 5.0, 'naruto.jpg', 7),
+(7, 2, 'Baju Adat Bali - Wanita', 'Satu set pakaian adat Bali untuk wanita dengan detail payet yang indah.', 80000.00, 2, 5.0, 'adat-bali.jpg', 10),
+(8, 3, 'Seragam Pilot', 'Seragam pilot gagah dengan atribut lengkap, membuat Anda terlihat seperti penerbang sejati.', 60000.00, 2, 4.8, 'profesi-pilot.jpg', 9);
+
+
+-- 4. Mengisi tabel `costume_sizes`
+INSERT INTO `costume_sizes` (`costume_id`, `size`) VALUES
+(1, 'S'), (1, 'M'), (1, 'L'),
+(2, 'S'), (2, 'M'),
+(3, 'L'), (3, 'XL'), (3, 'XXL'),
+(4, 'M'), (4, 'L'),
+(6, 'M'), (6, 'L');
+
+
+-- 5. Mengisi tabel `costume_pricing`
+INSERT INTO `costume_pricing` (`costume_id`, `duration_days`, `price`) VALUES
+(1, 1, 25000.00), (1, 3, 50000.00), (1, 7, 90000.00),
+(2, 1, 30000.00), (2, 3, 65000.00), (2, 7, 120000.00),
+(3, 1, 40000.00), (3, 2, 75000.00);
+
+
+-- 6. Mengisi tabel `reviews`
+INSERT INTO `reviews` (`costume_id`, `user_id`, `rating`, `comment`) VALUES
+(1, 1, 5, 'Kostumnya bagus banget, bahannya adem dan detailnya keren! Pas banget buat event kemarin.'),
+(2, 2, 5, 'Suka banget sama kostum Nezuko ini, persis seperti di anime. Recommended!'),
+(1, 2, 4, 'Ukuran M nya pas di badan, pengiriman juga cepat. Mantap.'),
+(3, 2, 3, 'Desainnya lumayan lah');
